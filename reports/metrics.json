@@ -1,0 +1,167 @@
+{
+  "date": "2026-11-09",
+  "donnees": {
+    "dossiers": 1000,
+    "apprentissage": 800,
+    "test": 200,
+    "taux_defaut": 0.3
+  },
+  "comparaison": [
+    {
+      "modele": "Forêt aléatoire",
+      "auc_cv_moyenne": 0.7897,
+      "auc_cv_ecart_type": 0.0426,
+      "seuil_optimal_cv": 0.24,
+      "cout_cv": 0.5212
+    },
+    {
+      "modele": "Gradient boosting",
+      "auc_cv_moyenne": 0.7864,
+      "auc_cv_ecart_type": 0.0465,
+      "seuil_optimal_cv": 0.14,
+      "cout_cv": 0.54
+    },
+    {
+      "modele": "Régression logistique",
+      "auc_cv_moyenne": 0.7731,
+      "auc_cv_ecart_type": 0.0572,
+      "seuil_optimal_cv": 0.15,
+      "cout_cv": 0.5162
+    }
+  ],
+  "modele_retenu": "Forêt aléatoire",
+  "raison": "meilleur AUC",
+  "test": {
+    "auc": 0.8011904761904762,
+    "gini": 0.6023809523809525,
+    "ks": 0.5095238095238095,
+    "seuil": 0.24,
+    "accuracy": 0.625,
+    "rappel_defauts": 0.8666666666666667,
+    "precision_refus": 0.4369747899159664,
+    "taux_acceptation": 0.405,
+    "cout_moyen_modele": 0.535,
+    "cout_moyen_tout_accepter": 1.5,
+    "cout_moyen_tout_refuser": 0.7,
+    "matrice_confusion": {
+      "bons_acceptes": 73,
+      "bons_refuses": 67,
+      "mauvais_acceptes": 8,
+      "mauvais_refuses": 52
+    },
+    "gain_vs_tout_accepter": 0.6433333333333333
+  },
+  "equite": {
+    "sexe": {
+      "groupes": [
+        {
+          "sexe": "femme",
+          "dossiers": 61,
+          "taux_accord": 0.361,
+          "taux_defaut_reel": 0.328
+        },
+        {
+          "sexe": "homme",
+          "dossiers": 139,
+          "taux_accord": 0.424,
+          "taux_defaut_reel": 0.288
+        }
+      ],
+      "ratio_impact_disparate": 0.8496804667963322
+    },
+    "tranche_age": {
+      "groupes": [
+        {
+          "tranche_age": "25 ans et plus",
+          "dossiers": 161,
+          "taux_accord": 0.453,
+          "taux_defaut_reel": 0.255
+        },
+        {
+          "tranche_age": "moins de 25 ans",
+          "dossiers": 39,
+          "taux_accord": 0.205,
+          "taux_defaut_reel": 0.487
+        }
+      ],
+      "ratio_impact_disparate": 0.4524060414471373
+    },
+    "travailleur_etranger": {
+      "groupes": [
+        {
+          "travailleur_etranger": "non",
+          "dossiers": 6,
+          "taux_accord": 0.833,
+          "taux_defaut_reel": 0.167
+        },
+        {
+          "travailleur_etranger": "oui",
+          "dossiers": 194,
+          "taux_accord": 0.392,
+          "taux_defaut_reel": 0.304
+        }
+      ],
+      "ratio_impact_disparate": 0.47010309278350515
+    }
+  },
+  "importance": [
+    {
+      "variable": "statut_compte",
+      "importance": 0.1289,
+      "ecart_type": 0.0348
+    },
+    {
+      "variable": "montant",
+      "importance": 0.0175,
+      "ecart_type": 0.008
+    },
+    {
+      "variable": "duree_mois",
+      "importance": 0.0147,
+      "ecart_type": 0.0112
+    },
+    {
+      "variable": "objet_credit",
+      "importance": 0.0117,
+      "ecart_type": 0.0049
+    },
+    {
+      "variable": "historique_credit",
+      "importance": 0.0091,
+      "ecart_type": 0.011
+    },
+    {
+      "variable": "autres_debiteurs",
+      "importance": 0.0068,
+      "ecart_type": 0.0022
+    },
+    {
+      "variable": "age",
+      "importance": 0.0062,
+      "ecart_type": 0.0039
+    },
+    {
+      "variable": "epargne",
+      "importance": 0.0044,
+      "ecart_type": 0.0088
+    },
+    {
+      "variable": "telephone",
+      "importance": 0.0025,
+      "ecart_type": 0.0028
+    },
+    {
+      "variable": "taux_effort",
+      "importance": 0.0018,
+      "ecart_type": 0.0033
+    }
+  ],
+  "exemples_scores": {
+    "5%": 812,
+    "10%": 758,
+    "20%": 700,
+    "30%": 661,
+    "50%": 600,
+    "70%": 539
+  }
+}

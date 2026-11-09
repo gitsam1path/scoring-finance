@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Scoring Finance — démonstration</title>
+  <style>
+    :root { --ink:#14213d; --muted:#6b7280; --line:#e5e7eb; --bg:#f6f7fb; --brand:#1d4ed8;
+            --ok:#15803d; --warn:#b45309; --bad:#b91c1c; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color:var(--ink); background:var(--bg); }
+    header { background: linear-gradient(120deg,#0b1d4f,#1d4ed8); color:#fff; padding:28px 40px; }
+    header h1 { margin:0 0 6px; font-size:1.7rem; }
+    header p { margin:0; opacity:.9; }
+    header a { color:#fff; }
+    main { display:grid; grid-template-columns: 1.15fr 1fr; gap:24px; padding:28px 40px; max-width:1300px; margin:auto; }
+    .card { background:#fff; border:1px solid var(--line); border-radius:14px; padding:22px; }
+    h2 { margin:0 0 14px; font-size:1.15rem; }
+    fieldset { border:0; padding:0; margin:0 0 16px; }
+    legend { font-weight:700; font-size:.82rem; text-transform:uppercase; letter-spacing:.06em; color:var(--brand); margin-bottom:8px; }
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:10px 14px; }
+    label { display:flex; flex-direction:column; gap:4px; font-size:.83rem; color:var(--muted); }
+    input, select { font:inherit; font-size:.92rem; color:var(--ink); padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:#fff; }
+    .actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:6px; }
+    button { font:inherit; font-weight:700; border:0; border-radius:8px; padding:10px 16px; cursor:pointer; }
+    .primary { background:var(--brand); color:#fff; }
+    .ghost { background:#eef2ff; color:var(--brand); }
+    .result { position:sticky; top:20px; align-self:start; }
+    .gauge { position:relative; width:260px; height:140px; margin:6px auto 0; }
+    .gauge svg { width:100%; height:100%; }
+    .score { position:absolute; left:0; right:0; bottom:6px; text-align:center; }
+    .score b { display:block; font-size:2.6rem; line-height:1; }
+    .score span { color:var(--muted); font-size:.85rem; }
+    .decision { text-align:center; font-weight:800; font-size:1.2rem; padding:10px; border-radius:10px; margin:14px 0 6px; }
+    .accorde { background:#dcfce7; color:var(--ok); } .etude { background:#fef3c7; color:var(--warn); } .refuse { background:#fee2e2; color:var(--bad); }
+    .proba { text-align:center; color:var(--muted); font-size:.9rem; margin-bottom:12px; }
+    .factors h3 { font-size:.95rem; margin:16px 0 8px; }
+    .factor { display:grid; grid-template-columns: 1fr 70px; gap:8px; align-items:center; font-size:.88rem; margin-bottom:6px; }
+    .factor small { color:var(--muted); display:block; }
+    .bar { height:8px; border-radius:4px; }
+    .up .bar { background:var(--bad); } .down .bar { background:var(--ok); }
+    .effect { text-align:right; font-weight:700; font-size:.82rem; }
+    .up .effect { color:var(--bad); } .down .effect { color:var(--ok); }
+    .empty { color:var(--muted); text-align:center; padding:40px 0; }
+    .meta { margin-top:16px; font-size:.78rem; color:var(--muted); border-top:1px solid var(--line); padding-top:10px; }
+    @media (max-width: 900px) { main { grid-template-columns:1fr; padding:16px; } header { padding:20px; } .result { position:static; } }
+  </style>
+</head>
+<body>
+<header>
+  <h1>🏦 Scoring Finance</h1>
+  <p>Évaluez une demande de crédit : probabilité de défaut, score, décision et motifs.
+     · <a href="/docs">Documentation de l'API</a></p>
+</header>
+
+<main>
+  <form id="form" class="card">
+    <h2>Demande de crédit</h2>
+    <fieldset><legend>Le crédit</legend><div class="grid" id="g-credit"></div></fieldset>
+    <fieldset><legend>Situation financière</legend><div class="grid" id="g-finance"></div></fieldset>
+    <fieldset><legend>Situation personnelle</legend><div class="grid" id="g-perso"></div></fieldset>
+    <div class="actions">
+      <button class="primary" type="submit">Évaluer la demande</button>
+      <button class="ghost" type="button" data-profile="solide">Profil solide</button>
+      <button class="ghost" type="button" data-profile="fragile">Profil fragile</button>
+    </div>
+  </form>
+
+  <section class="card result" id="result">
+    <h2>Résultat</h2>
+    <div id="out"><p class="empty">Remplissez la demande puis cliquez sur « Évaluer ».</p></div>
+  </section>
+</main>
+
+<script>
+// Description du formulaire : [nom, libellé, groupe, type, options numériques]
+const FIELDS = [
+  ["montant", "Montant demandé (DM)", "credit", "number", { min: 100, max: 100000, step: 50 }],
+  ["duree_mois", "Durée (mois)", "credit", "number", { min: 1, max: 120 }],
+  ["objet_credit", "Objet du crédit", "credit", "select"],
+  ["taux_effort", "Taux d'effort (1 faible → 4 élevé)", "credit", "number", { min: 1, max: 4 }],
+  ["statut_compte", "Solde du compte courant", "finance", "select"],
+  ["epargne", "Épargne", "finance", "select"],
+  ["historique_credit", "Historique de remboursement", "finance", "select"],
+  ["autres_credits", "Autres crédits en cours", "finance", "select"],
+  ["nb_credits", "Crédits dans cette banque", "finance", "number", { min: 1, max: 10 }],
+  ["patrimoine", "Patrimoine", "finance", "select"],
+  ["autres_debiteurs", "Co-emprunteur / garant", "finance", "select"],
+  ["age", "Âge", "perso", "number", { min: 18, max: 100 }],
+  ["emploi", "Emploi", "perso", "select"],
+  ["anciennete_emploi", "Ancienneté dans l'emploi", "perso", "select"],
+  ["logement", "Logement", "perso", "select"],
+  ["anciennete_residence", "Ancienneté logement (1 → 4)", "perso", "number", { min: 1, max: 4 }],
+  ["nb_personnes_a_charge", "Personnes à charge", "perso", "number", { min: 0, max: 10 }],
+  ["telephone", "Téléphone à son nom", "perso", "select"],
+];
+
+const PROFILES = {
+  solide: { statut_compte: "pas de compte courant", duree_mois: 12, historique_credit: "compte critique / crédits ailleurs",
+    objet_credit: "voiture d'occasion", montant: 2500, epargne: "500 à 1 000 DM", anciennete_emploi: "7 ans ou plus",
+    taux_effort: 2, autres_debiteurs: "aucun", anciennete_residence: 4, patrimoine: "immobilier", age: 45,
+    autres_credits: "aucun", logement: "propriétaire", nb_credits: 1, emploi: "cadre / indépendant / très qualifié",
+    nb_personnes_a_charge: 1, telephone: "oui" },
+  fragile: { statut_compte: "négatif (< 0 DM)", duree_mois: 48, historique_credit: "retards de paiement passés",
+    objet_credit: "voiture neuve", montant: 9000, epargne: "moins de 100 DM", anciennete_emploi: "moins d'1 an",
+    taux_effort: 4, autres_debiteurs: "aucun", anciennete_residence: 1, patrimoine: "aucun / inconnu", age: 23,
+    autres_credits: "banque", logement: "locataire", nb_credits: 2, emploi: "non qualifié",
+    nb_personnes_a_charge: 1, telephone: "non" },
+};
+const DEFAULT = { statut_compte: "0 à 200 DM", duree_mois: 24, historique_credit: "crédits en cours remboursés à temps",
+  objet_credit: "voiture d'occasion", montant: 3500, epargne: "moins de 100 DM", anciennete_emploi: "1 à 4 ans",
+  taux_effort: 3, autres_debiteurs: "aucun", anciennete_residence: 2, patrimoine: "voiture ou autre", age: 32,
+  autres_credits: "aucun", logement: "propriétaire", nb_credits: 1, emploi: "qualifié / employé",
+  nb_personnes_a_charge: 1, telephone: "oui" };
+
+const form = document.getElementById("form");
+const out = document.getElementById("out");
+let info = null;
+
+function build(categories) {
+  for (const [name, label, group, type, opts] of FIELDS) {
+    const wrap = document.createElement("label");
+    wrap.textContent = label;
+    let input;
+    if (type === "select") {
+      input = document.createElement("select");
+      for (const v of categories[name]) input.append(new Option(v, v));
+    } else {
+      input = document.createElement("input");
+      input.type = "number";
+      Object.assign(input, opts);
+      input.required = true;
+    }
+    input.name = name;
+    wrap.append(input);
+    document.getElementById("g-" + group).append(wrap);
+  }
+}
+
+function fill(values) {
+  for (const [k, v] of Object.entries(values)) form.elements[k].value = v;
+}
+
+function payload() {
+  const data = {};
+  for (const [name, , , type] of FIELDS) {
+    const v = form.elements[name].value;
+    data[name] = type === "number" ? Number(v) : v;
+  }
+  return data;
+}
+
+// Jauge en demi-cercle : 300 à 900 points
+function gauge(score) {
+  const t = (score - 300) / 600, angle = Math.PI * (1 - t);
+  const x = 130 + 100 * Math.cos(angle), y = 130 - 100 * Math.sin(angle);
+  return `<svg viewBox="0 0 260 140">
+    <defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#b91c1c"/><stop offset=".5" stop-color="#f59e0b"/><stop offset="1" stop-color="#15803d"/></linearGradient></defs>
+    <path d="M30 130 A100 100 0 0 1 230 130" fill="none" stroke="url(#g)" stroke-width="18" stroke-linecap="round"/>
+    <circle cx="${x}" cy="${y}" r="11" fill="#fff" stroke="#14213d" stroke-width="4"/></svg>`;
+}
+
+function factorList(list, cls) {
+  if (!list.length) return `<p class="meta" style="border:0;padding:0">Aucun facteur marquant.</p>`;
+  const max = Math.max(...list.map((f) => Math.abs(f.effet)), 1);
+  return list.map((f) => `
+    <div class="factor ${cls}">
+      <div>${f.libelle} : <b>${f.valeur}</b>
+        <div class="bar" style="width:${(Math.abs(f.effet) / max) * 100}%"></div></div>
+      <div class="effect">${f.effet > 0 ? "+" : ""}${f.effet.toLocaleString("fr-FR")} pts</div>
+    </div>`).join("");
+}
+
+function render(r) {
+  out.innerHTML = `
+    <div class="gauge">${gauge(r.score)}<div class="score"><b>${r.score}</b><span>points sur 900</span></div></div>
+    <div class="decision ${r.decision.code}">${r.decision.libelle}</div>
+    <div class="proba">Probabilité de défaut estimée : <b>${(r.probabilite_defaut * 100).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} %</b>
+      · accord automatique sous ${(r.seuil * 100).toFixed(0)} %</div>
+    <div class="factors">
+      <h3>⬆️ Ce qui augmente le risque</h3>${factorList(r.facteurs_risque, "up")}
+      <h3>⬇️ Ce qui diminue le risque</h3>${factorList(r.facteurs_favorables, "down")}
+    </div>
+    <p class="meta">Effets en points de pourcentage de probabilité de défaut, par rapport à un client type.
+      Modèle : ${info.modele} · AUC test ${info.performances_test.auc.toFixed(2).replace(".", ",")}.</p>`;
+}
+
+async function evaluate() {
+  const res = await fetch("/predict", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload()) });
+  const body = await res.json();
+  if (!res.ok) { out.innerHTML = `<p class="empty">Erreur : ${JSON.stringify(body.detail)}</p>`; return; }
+  render(body);
+}
+
+form.addEventListener("submit", (e) => { e.preventDefault(); evaluate(); });
+document.querySelectorAll("[data-profile]").forEach((b) =>
+  b.addEventListener("click", () => { fill(PROFILES[b.dataset.profile]); evaluate(); }));
+
+fetch("/model").then((r) => r.json()).then((m) => { info = m; build(m.categories); fill(DEFAULT); evaluate(); });
+</script>
+</body>
+</html>
